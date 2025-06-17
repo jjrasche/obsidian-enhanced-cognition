@@ -1,6 +1,8 @@
 import esbuild from "esbuild";
 import process from "process";
 import builtins from "builtin-modules";
+import fs from "fs";
+import path from "path";
 
 const banner =
 `/*
@@ -10,6 +12,33 @@ if you want to view the source, please visit the github repository of this plugi
 `;
 
 const prod = (process.argv[2] === "production");
+
+const targetDir = "/mnt/c/Users/rasche_j/Documents/Second Brain/.obsidian/plugins/obsidian-enhanced-cognition";
+// Copy plugin files to Obsidian vault
+const copyPlugin = {
+	name: "copy-plugin",
+	setup(build) {
+		build.onEnd(async () => {
+			// Ensure target directory exists
+			if (!fs.existsSync(targetDir)) {
+				fs.mkdirSync(targetDir, { recursive: true });
+			}
+			
+			// Copy main.js
+			fs.copyFileSync("main.js", path.join(targetDir, "main.js"));
+			
+			// Copy manifest.json
+			fs.copyFileSync("manifest.json", path.join(targetDir, "manifest.json"));
+			
+			// Copy styles.css if it exists
+			if (fs.existsSync("styles.css")) {
+				fs.copyFileSync("styles.css", path.join(targetDir, "styles.css"));
+			}
+			
+			console.log(`Plugin files copied to ${targetDir}`);
+		});
+	}
+};
 
 const context = await esbuild.context({
 	banner: {
@@ -39,6 +68,7 @@ const context = await esbuild.context({
 	treeShaking: true,
 	outfile: "main.js",
 	minify: prod,
+	plugins: [copyPlugin],
 });
 
 if (prod) {
